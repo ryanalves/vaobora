@@ -36,7 +36,7 @@ const LoginScreen = ({ navigation }) => {
 					<TextInput
 						textContentType="emailAddress"
 						style={styles.input}
-						onChangeText={(value: string) => setEmail(value)}
+						onChangeText={(value: string) => setEmail(value.toLocaleLowerCase().trim())}
 					></TextInput>
 				</View>
 				<View style={styles.formGroup}>
