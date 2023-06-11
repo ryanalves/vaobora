@@ -27,19 +27,20 @@ export default class AuthService {
 		});
 	}
 
-	async login(email: string, senha: string): Promise<IUsuario> {
+	async login(credenciais: { email: string; senha: string }): Promise<IUsuario> {
 		return axios
 			.post(
 				`${SERVER_URL}/auth/login`,
 				{
-					email: email,
-					senha: senha,
+					email: credenciais.email,
+					senha: credenciais.senha,
 				},
 				{
 					headers: {
 						Accept: "application/json",
 						"Content-Type": "application/json",
 					},
+					timeout: 5000,
 				}
 			)
 			.then(async (result: any) => {
@@ -51,7 +52,10 @@ export default class AuthService {
 			.catch(async (err) => {
 				await AsyncStorage.removeItem("access_token");
 				this.$user.next(null);
-				return null;
+				if (err.response?.status == "401") {
+					throw Error("Credenciais Inválidas. Tente novamente");
+				}
+				throw Error("Erro ao fazer login");
 			});
 	}
 

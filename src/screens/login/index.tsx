@@ -1,17 +1,11 @@
-import React, {
-	StyleSheet,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View,
-	Alert,
-} from "react-native";
+import React, { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
 import { useState } from "react";
 import AuthService from "../../services/auth.service";
 
 const authService = AuthService.getInstance();
 
 const LoginScreen = ({ navigation }) => {
+	const [isLoading, setIsLoading] = useState(false);
 	const [email, setEmail] = useState("");
 	const [senha, setSenha] = useState("");
 
@@ -19,42 +13,54 @@ const LoginScreen = ({ navigation }) => {
 		navigation.navigate("Registro");
 	};
 
-	const onSubmit = async () => {
-		let user = await authService.login(email, senha);
-		if (!user) {
-			Alert.alert("Oops!", "Credenciais Inválidas. Tente novamente", [
-				{ text: "OK", onPress: () => console.log("OK Pressed") },
-			]);
-		}
+	const onSubmit = () => {
+		setIsLoading(true);
+		authService
+			.login({ email, senha })
+			.catch((err) => {
+				Alert.alert("Oops!", err.message, [{ text: "OK" }]);
+			})
+			.finally(() => setIsLoading(false));
 	};
 
 	return (
-		<View style={styles.container}>
-			<View style={styles.formGroup}>
-				<Text> Email </Text>
-				<TextInput
-					style={styles.input}
-					onChangeText={(value: string) => setEmail(value)}
-				></TextInput>
-			</View>
-			<View style={styles.formGroup}>
-				<Text> Senha </Text>
-				<TextInput
-					style={styles.input}
-					onChangeText={(value: string) => setSenha(value)}
-				></TextInput>
-			</View>
+		<>
+			{isLoading && (
+				<View style={{ ...styles.container, ...styles.absolute }}>
+					<ActivityIndicator />
+				</View>
+			)}
+			<View style={styles.container}>
+				<View style={styles.formGroup}>
+					<Text> Email </Text>
+					<TextInput
+						textContentType="emailAddress"
+						style={styles.input}
+						onChangeText={(value: string) => setEmail(value)}
+					></TextInput>
+				</View>
+				<View style={styles.formGroup}>
+					<Text> Senha </Text>
+					<TextInput
+						textContentType="password"
+						secureTextEntry={true}
+						style={styles.input}
+						onChangeText={(value: string) => setSenha(value)}
+					></TextInput>
+				</View>
 
-			<TouchableOpacity onPress={() => goToRegister()}>
-				<Text style={styles.register}>
-					Não possui uma conta? Registre-se!
-				</Text>
-			</TouchableOpacity>
+				<TouchableOpacity onPress={() => goToRegister()}>
+					<Text style={styles.register}>
+						Não possui uma conta?
+						<Text style={{ color: "blue" }}> Registre-se! </Text>
+					</Text>
+				</TouchableOpacity>
 
-			<TouchableOpacity style={styles.button} onPress={() => onSubmit()}>
-				<Text style={styles.buttonText}> Login </Text>
-			</TouchableOpacity>
-		</View>
+				<TouchableOpacity style={styles.button} onPress={() => onSubmit()}>
+					<Text style={styles.buttonText}> Login </Text>
+				</TouchableOpacity>
+			</View>
+		</>
 	);
 };
 
@@ -64,6 +70,13 @@ const styles = StyleSheet.create({
 		backgroundColor: "#fff",
 		alignItems: "center",
 		justifyContent: "center",
+	},
+	absolute: {
+		position: "absolute",
+		zIndex: 100,
+		width: "100%",
+		height: "100%",
+		backgroundColor: "#fff8",
 	},
 	formGroup: {
 		width: "50%",
