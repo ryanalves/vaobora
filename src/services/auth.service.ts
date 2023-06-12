@@ -15,7 +15,7 @@ export default class AuthService {
 
 	public readonly $isLoading = new BehaviorSubject<boolean>(true);
 	public readonly $user = new BehaviorSubject<IUsuario | null>(null);
-	private token: string = "";
+	public token: string = "";
 
 	private constructor() {
 		AsyncStorage.getItem("access_token").then(async (token) => {
