@@ -3,37 +3,33 @@ import React, { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity 
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import CaronaService from "../../../services/carona.service";
 import { ICarona } from "../../../types/carona";
+import dayjs from "dayjs";
 
 const caronaService = CaronaService.getInstance();
 
 const ordenacoes = [
-	{ key: "saida_cedo", label: "Saída mais cedo" },
-	{ key: "preco_baxio", label: "Preço mais baixo" },
-	{ key: "proximidade_origem", label: "Proximidade da origem" },
-	{ key: "proximidade_destino", label: "Proximidade do destino" },
+	{ key: "saidaCedo", label: "Saída mais cedo" },
+	{ key: "saidaTarde", label: "Saída mais tarde" },
+	{ key: "precoBaixo", label: "Preço mais baixo" },
+	{ key: "precoAlto", label: "Preço mais alto" },
 ];
 // const caronas = Array(5).fill(Math.random()); // Implementar backend
 
 const CaronaScreen = () => {
 	const [caronas, setCaronas] = useState<ICarona[]>([]);
-	const [origem, setOrigem] = useState("");
-	const [destino, setDestino] = useState("");
-	const [pessoas, setPessoas] = useState(1);
-	const [ordenacaoSelecionada, setOrdenacaoSelecionada] = useState("saida_cedo");
+	const [saida, setSaida] = useState("");
+	const [chegada, setChegada] = useState("");
+	const [vagas, setVagas] = useState(1);
+	const [ordenacaoSelecionada, setOrdenacaoSelecionada] = useState(ordenacoes[0].key);
 
 	const selecionarOrdem = (ordenacao: any) => {
 		setOrdenacaoSelecionada(ordenacao.key);
 	};
 
 	const pesquisarCaronas = () => {
-		caronaService
-			.find({
-				futuro: true,
-			})
-			.then((caronas) => {
-				setCaronas(caronas);
-				console.log(caronas.length);
-			});
+		caronaService.find({ futuro: true, saida, chegada, vagas, filtro: ordenacaoSelecionada }).then((caronas) => {
+			setCaronas(caronas);
+		});
 	};
 
 	const formatarPreco = (preco: string | number) => {
@@ -42,13 +38,14 @@ const CaronaScreen = () => {
 	};
 
 	const formatarHorario = (horario: string) => {
-		let horarioCompleto = new Date(horario).toLocaleTimeString();
-		let horarioArr = horarioCompleto.split(":");
-		horarioArr.pop();
-		return horarioArr.join(":");
+		let date = dayjs(horario);
+		if (date.isBefore(dayjs().endOf("day"))) {
+			return date.format("HH:mm");
+		}
+		return date.format("DD/MM HH:mm");
 	};
 
-	useEffect(pesquisarCaronas, []);
+	useEffect(() => pesquisarCaronas(), []);
 
 	return (
 		<>
@@ -57,36 +54,39 @@ const CaronaScreen = () => {
 					<View style={styles.campos}>
 						<View style={{ flex: 1 }}>
 							<View style={styles.form_group}>
-								<Text>Origem</Text>
-								<TextInput style={styles.input} value={origem} onChangeText={(inp) => setOrigem(inp)}></TextInput>
+								<Text>Saida</Text>
+								<TextInput style={styles.input} value={saida} onChangeText={(inp) => setSaida(inp)}></TextInput>
 							</View>
 							<View style={styles.form_group}>
-								<Text>Destino</Text>
-								<TextInput style={styles.input} value={destino} onChangeText={(inp) => setDestino(inp)}></TextInput>
+								<Text>Chegada</Text>
+								<TextInput style={styles.input} value={chegada} onChangeText={(inp) => setChegada(inp)}></TextInput>
 							</View>
 						</View>
 						<View style={{ width: 130 }}>
 							<View style={styles.form_group}>
-								<Text>Pessoas</Text>
+								<Text>Vagas</Text>
 								<TextInput
 									style={styles.input}
-									value={pessoas.toString()}
-									onChangeText={(inp) => setPessoas(+inp)}
+									textAlign="center"
+									value={vagas.toString()}
+									onChangeText={(inp) => setVagas(+inp)}
 								></TextInput>
 							</View>
 							<View style={styles.form_group}>
 								<Text>{""}</Text>
-								<TouchableOpacity style={styles.button_pesquisar}>
+								<TouchableOpacity style={styles.button_pesquisar} onPress={() => pesquisarCaronas()}>
 									<Text style={{ color: "white" }}>Encontrar carona</Text>
 								</TouchableOpacity>
 							</View>
 						</View>
 					</View>
-					<View style={{ width: "95%" }}>
-						<Text>Ordenar </Text>
+					<View style={{ flex: 1, width: "95%", justifyContent: "center" }}>
 						{ordenacoes.map((ordenacao) => (
-							<TouchableOpacity style={styles.ordenacao} onPress={() => selecionarOrdem(ordenacao)}>
-								<Text style={styles.ordenacao_texto}>{ordenacao.label}</Text>
+							<TouchableOpacity key={ordenacao.key} style={styles.ordenacao} onPress={() => selecionarOrdem(ordenacao)}>
+								<View style={styles.ordenacao_label}>
+									<MaterialCommunityIcons name="clock-outline" color={"gray"} size={15} />
+									<Text style={styles.ordenacao_label_texto}>{ordenacao.label}</Text>
+								</View>
 								<View
 									style={
 										ordenacaoSelecionada == ordenacao.key
@@ -100,7 +100,7 @@ const CaronaScreen = () => {
 				</View>
 				<ScrollView style={styles.caronas}>
 					{caronas.map((carona, index) => (
-						<View key={index} style={styles.carona}>
+						<View key={carona.id} style={styles.carona}>
 							<View style={styles.carona_preco}>
 								<Text>R$ {formatarPreco(carona.valor)}</Text>
 							</View>
@@ -113,7 +113,13 @@ const CaronaScreen = () => {
 								</Text>
 							</View>
 							<View style={styles.carona_motorista}>
-								<Text> {carona.motorista?.nomeCompleto} </Text>
+								<View style={styles.carona_motorista_foto}>
+									<MaterialCommunityIcons name="account" color={"lightblue"} size={30} />
+								</View>
+								<View style={styles.carona_motorista_dados}>
+									<Text> {carona.motorista?.nomeCompleto} </Text>
+									<Text> {carona.motorista.motorista.modeloVeiculo} </Text>
+								</View>
 							</View>
 						</View>
 					))}
@@ -131,6 +137,8 @@ const CaronaScreen = () => {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
+		paddingTop: 15,
+		paddingHorizontal: 10,
 		backgroundColor: "#fff",
 	},
 	pesquisa: {
@@ -151,9 +159,10 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: "#bbb",
 		borderRadius: 5,
+		paddingHorizontal: 5,
 	},
 	button_pesquisar: {
-		backgroundColor: "#06f",
+		backgroundColor: "#007bff",
 		alignItems: "center",
 		justifyContent: "center",
 		height: 30,
@@ -165,15 +174,22 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		paddingVertical: 2,
 	},
-	ordenacao_texto: {},
+	ordenacao_label: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 7,
+	},
+	ordenacao_label_texto: {},
 	ordenacao_checkbox: {
 		width: 16,
 		height: 16,
-		borderWidth: 0.5,
+		borderWidth: 1,
 		borderRadius: 12,
+		borderColor: "lightgray",
 	},
 	ordenacao_checkbox_selecionado: {
-		backgroundColor: "lightgreen",
+		borderWidth: 5,
+		borderColor: "#007bff",
 	},
 	addCaronaContainer: {
 		flex: 1,
@@ -208,19 +224,38 @@ const styles = StyleSheet.create({
 		flexDirection: "column",
 	},
 	carona_info: {
-		flex: 2,
+		flex: 1,
 	},
 	carona_motorista: {
 		flex: 1,
+		alignItems: "center",
+		gap: 5,
+		justifyContent: "center",
+		flexDirection: "row",
+	},
+	carona_motorista_foto: {
+		width: 35,
+		height: 35,
+		borderRadius: 50,
+		borderWidth: 1.5,
+		borderColor: "lightblue",
+		backgroundColor: "white",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	carona_motorista_dados: {
+		flex: 1,
+		justifyContent: "center",
 	},
 	carona_horario: {
 		width: 40,
-		backgroundColor: "red",
 	},
 	carona_preco: {
 		position: "absolute",
-		top: 10,
-		right: 10,
+		backgroundColor: "white",
+		padding: 3,
+		top: 7,
+		right: 7,
 	},
 });
 

@@ -37,11 +37,9 @@ export default class CaronaService {
 			)
 			.then(async (result: any) => {
 				const data = result.data;
-				console.log(data);
 				return data;
 			})
 			.catch(async (err) => {
-				console.log(err.response);
 				throw err;
 			});
 	}

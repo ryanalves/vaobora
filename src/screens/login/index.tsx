@@ -1,4 +1,4 @@
-import React, { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
+import React, { StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, ActivityIndicator, Image } from "react-native";
 import { useState } from "react";
 import AuthService from "../../services/auth.service";
 
@@ -31,6 +31,7 @@ const LoginScreen = ({ navigation }) => {
 				</View>
 			)}
 			<View style={styles.container}>
+				<Image style={styles.icon} source={require("../../assets/van.png")} />
 				<View style={styles.formGroup}>
 					<Text> Email </Text>
 					<TextInput
@@ -65,6 +66,11 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+	icon: {
+		width: "50%",
+		height: 80,
+		resizeMode: "contain"
+	},
 	container: {
 		flex: 1,
 		backgroundColor: "#fff",
@@ -88,14 +94,17 @@ const styles = StyleSheet.create({
 	},
 	input: {
 		borderWidth: 1,
+		borderRadius: 5,
 		borderColor: "#ccc",
 		marginBottom: 10,
+		paddingHorizontal: 5,
 		width: "100%",
 	},
 	button: {
-		backgroundColor: "#090",
+		backgroundColor: "#007bff",
 		padding: 10,
-		width: "50%",
+		paddingHorizontal: 25,
+		borderRadius: 5,
 		justifyContent: "center",
 		alignItems: "center",
 	},
